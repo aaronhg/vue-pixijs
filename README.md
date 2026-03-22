@@ -12,7 +12,7 @@ npm run dev
 ## Demos
 
 - **PixiDemo** — Graphics drawing, GlowCircle custom element, drag interaction
-- **SlotDemo** — 5-reel slot machine with spritesheet atlas, spin/stop animation
+- **SlotDemo** — 5-reel slot machine with spritesheet atlas, spin/stop animation, Spine background
 
 Switch demo in `src/App.vue`.
 
@@ -38,5 +38,6 @@ npm test
 - Vue 3.5 + TypeScript
 - PixiJS 8
 - vue3-pixi 1.0.0-rc.1
+- Spine (spine-pixi-v8)
 - Vite 8
 - Vitest

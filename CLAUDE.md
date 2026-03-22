@@ -9,7 +9,7 @@ Vue 3 + PixiJS v8 integration project using **vue3-pixi** (custom Vue renderer).
 ## Commands
 
 - `npm run dev` — Start Vite dev server
-- `npm run build` — Type-check (vue-tsc) then build for production
+- `npm run build` — Type-check (vue-tsc) then build for production, then run postbuild obfuscation
 - `npm run preview` — Preview production build
 
 - `npm run test` — Run tests (vitest)
@@ -62,6 +62,10 @@ Symbol textures are loaded as a PixiJS `Spritesheet` atlas (`public/symbols/symb
 
 Atlas is loaded by vue3-pixi's `<Loader>` component in `SlotScene.vue`, which passes textures to `<slot-reel>` via the `:textures` prop. `SlotReel` itself is fully synchronous — no `Assets.load()` inside.
 
+### Postbuild Asset Obfuscation
+
+`scripts/postbuild.mjs` runs after `vite build`. It hashes filenames of static assets (`public/spine/`, `public/symbols/`) and moves them into `dist/assets/`, then updates all references in JS/HTML/atlas/JSON files. Source code keeps readable paths (`spine/spineboy-pro.skel`), only the build output is obfuscated.
+
 ### PixiJS DevTools
 
 `globalThis.__PIXI_APP__` is set via `onReady` in `SlotScene.vue` for Chrome PixiJS DevTools extension.
@@ -70,3 +74,4 @@ Atlas is loaded by vue3-pixi's `<Loader>` component in `SlotScene.vue`, which pa
 
 - **pixi.js** v8 — Canvas/WebGL rendering
 - **vue3-pixi** v1.0.0-rc.1 — Custom Vue renderer for PixiJS (no Vue plugin registration needed, `<Application>` is imported directly)
+- **@esotericsoftware/spine-pixi-v8** — Spine animation runtime for PixiJS v8
