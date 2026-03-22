@@ -1,3 +1,6 @@
+/**
+ * @vitest-environment jsdom
+ */
 import { describe, it, expect, beforeEach } from 'vitest'
 import { Texture } from 'pixi.js'
 import { SlotReel, ReelStatus } from '../SlotReel'
