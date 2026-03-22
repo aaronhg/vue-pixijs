@@ -4,6 +4,7 @@ import { compilerOptions as baseCompilerOptions } from 'vue3-pixi/compiler'
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: '/vue3-pixijs-demo/',
   plugins: [
     vue({
       template: {
