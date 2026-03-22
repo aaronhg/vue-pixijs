@@ -10,6 +10,7 @@ const REEL_COUNT = 5
 const VISIBLE = 3
 const SYMBOL_W = 120
 const SYMBOL_H = 100
+const BASE = import.meta.env.BASE_URL
 
 const reelRefs = ref<SlotReel[]>([])
 const spinning = ref(false)
@@ -60,6 +61,12 @@ async function handleSpin() {
   spinning.value = false
 }
 
+function extractTextures(loaded: any): Record<string, any> {
+  if (!loaded) return {}
+  // Spritesheet 物件有 .textures，直接 texture map 則沒有
+  return loaded.textures ?? loaded
+}
+
 function drawBg(g: PixiGraphics) {
   g.clear()
   g.roundRect(0, 0, REEL_COUNT * (SYMBOL_W + 10) + 30, VISIBLE * SYMBOL_H + 40, 16)
@@ -89,7 +96,7 @@ function drawButton(g: PixiGraphics) {
     }"
   />
 
-  <Loader :resources="{ symbols: '/symbols/symbols.json' }">
+  <Loader :resources="{ symbols: `${BASE}symbols/symbols.json` }">
     <template #default="{ textures }">
       <!-- Reel background -->
       <graphics :x="50" :y="60" @effect="drawBg" />
@@ -105,7 +112,7 @@ function drawButton(g: PixiGraphics) {
         :symbol-height="SYMBOL_H"
         :symbol-width="SYMBOL_W"
         :reel-index="i - 1"
-        :textures="textures.symbols?.textures ?? {}"
+        :textures="extractTextures(textures.symbols)"
         :start-duration="250"
         :loop-duration="60"
         :stop-duration="180"
