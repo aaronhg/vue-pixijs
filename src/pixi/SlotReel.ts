@@ -1,4 +1,4 @@
-import { Assets, Container, Graphics, Sprite, Spritesheet, Texture } from 'pixi.js'
+import { Container, Graphics, Sprite, Texture } from 'pixi.js'
 
 export const ReelStatus = {
   IDLE: 0,
@@ -37,9 +37,6 @@ function clamp01(v: number) {
   return Math.min(1, Math.max(0, v))
 }
 
-/** atlas 路徑，可在外部修改 */
-export let SYMBOL_ATLAS = '/symbols/symbols.json'
-
 export class SlotReel extends Container {
   public status: ReelStatus = ReelStatus.IDLE
   public index: number = 0
@@ -48,6 +45,10 @@ export class SlotReel extends Container {
   private total: number = 0
   private nodes: Container[] = []
   private symbolNodes: Container[] = []
+  /** symbolNodes 的反轉快取（由下到上），pre() 時建立 */
+  private reversedNodes: Container[] = []
+  /** 追蹤每個 slot 當前顯示的 symbol id（由下到上） */
+  private currentIds: string[] = []
   private symbols: string[] = []
   private symbolIndex: number = 0
   private delta: number = 0
@@ -55,8 +56,8 @@ export class SlotReel extends Container {
   private resolve: (() => void) | null = null
   private loaded = false
 
-  /** symbol id → texture 快取，atlas 載入後填入 */
-  private textures: Record<string, Texture> = {}
+  /** symbol id → texture，由外部（Loader）傳入 */
+  public textures: Record<string, Texture> = {}
 
   public createSymbolView: (id: string) => Container
   public updateSymbolView: (node: Container, id: string, blur: boolean) => void
@@ -90,17 +91,11 @@ export class SlotReel extends Container {
     }
   }
 
-  /** 載入 atlas 並建立節點 */
-  private async pre() {
+  /** 延遲初始化，等 patchProp 設完 cfg 後才建節點 */
+  private pre() {
     if (this.loaded) return
     this.loaded = true
     this.total = this.cfg.visibleCount + 2
-
-    // 載入 spritesheet atlas
-    const sheet: Spritesheet = await Assets.load(SYMBOL_ATLAS)
-    for (const [key, tex] of Object.entries(sheet.textures)) {
-      this.textures[key] = tex
-    }
 
     for (let i = 0; i < this.total; i++) {
       const root = new Container()
@@ -112,6 +107,9 @@ export class SlotReel extends Container {
       this.addChild(root)
     }
 
+    this.reversedNodes = [...this.symbolNodes].reverse()
+    this.currentIds = new Array(this.total).fill('')
+
     const mask = new Graphics()
     mask.rect(0, 0, this.cfg.symbolWidth, this.cfg.visibleCount * this.cfg.symbolHeight)
     mask.fill({ color: 0xffffff })
@@ -119,17 +117,18 @@ export class SlotReel extends Container {
     this.mask = mask
   }
 
-  public async setInitialSymbols(ids: string[]) {
-    await this.pre()
-    const arr = [...this.symbolNodes].reverse()
-    for (let i = 0; i < arr.length; i++) {
-      this.updateSymbolView(arr[i], ids[i] ?? '', false)
+  public setInitialSymbols(ids: string[]) {
+    this.pre()
+    for (let i = 0; i < this.reversedNodes.length; i++) {
+      const id = ids[i] ?? ''
+      this.currentIds[i] = id
+      this.updateSymbolView(this.reversedNodes[i], id, false)
     }
   }
 
-  public async spin(symbols: string[]): Promise<void> {
-    await this.pre()
-    this.symbols = this.getAllSymbols().concat(symbols)
+  public spin(symbols: string[]): Promise<void> {
+    this.pre()
+    this.symbols = [...this.currentIds, ...symbols]
     this.symbolIndex = 0
     this.delta = 0
     this.status = ReelStatus.STARTING
@@ -140,7 +139,7 @@ export class SlotReel extends Container {
   public stop(symbols: string[]): Promise<void> {
     this.status = ReelStatus.STOPPING
     this.privateStatus = ReelStatus.LOOPING
-    const cur = this.getAllSymbols()
+    const cur = [...this.currentIds]
     this.symbols = [...cur, cur[0], ...symbols, cur[cur.length - 1]]
     this.symbolIndex = 0
     this.resolve?.()
@@ -226,22 +225,11 @@ export class SlotReel extends Container {
   }
 
   private applySymbols(blur: boolean) {
-    const arr = [...this.symbolNodes].reverse()
-    for (let i = 0; i < arr.length; i++) {
+    for (let i = 0; i < this.reversedNodes.length; i++) {
       const idx = (this.symbolIndex + i) % this.symbols.length
-      this.updateSymbolView(arr[i], this.symbols[idx], blur)
+      const id = this.symbols[idx]
+      this.currentIds[i] = id
+      this.updateSymbolView(this.reversedNodes[i], id, blur)
     }
-  }
-
-  private getAllSymbols(): string[] {
-    return [...this.symbolNodes].reverse().map((n) => {
-      const sprite = n.children[1] as Sprite
-      if (!sprite?.texture || sprite.texture === Texture.EMPTY) return ''
-      // 從 textures 反查 id
-      for (const [id, tex] of Object.entries(this.textures)) {
-        if (tex === sprite.texture) return id
-      }
-      return ''
-    })
   }
 }

@@ -27,9 +27,16 @@ Switch demo in `src/App.vue`.
 
 `public/symbols/` contains a TexturePacker JSON Hash spritesheet for slot symbols.
 
+## Tests
+
+```bash
+npm test
+```
+
 ## Tech Stack
 
 - Vue 3.5 + TypeScript
 - PixiJS 8
 - vue3-pixi 1.0.0-rc.1
 - Vite 8
+- Vitest

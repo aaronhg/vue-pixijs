@@ -12,7 +12,10 @@ Vue 3 + PixiJS v8 integration project using **vue3-pixi** (custom Vue renderer).
 - `npm run build` — Type-check (vue-tsc) then build for production
 - `npm run preview` — Preview production build
 
-No tests or linter configured.
+- `npm run test` — Run tests (vitest)
+- `npm run test:watch` — Watch mode
+
+No linter configured.
 
 ## Architecture
 
@@ -57,7 +60,7 @@ Use `<pixi-text>` instead of `<text>` in templates. `<text>` causes TypeScript e
 
 Symbol textures are loaded as a PixiJS `Spritesheet` atlas (`public/symbols/symbols.json` + `symbols.png`). The JSON format is **TexturePacker JSON Hash** (also known as PixiJS format). Can be regenerated with TexturePacker (Data Format: PixiJS) or `spritesheet-js`.
 
-`SlotReel.pre()` loads the atlas via `Assets.load()`, making `setInitialSymbols()` and `spin()` async.
+Atlas is loaded by vue3-pixi's `<Loader>` component in `SlotScene.vue`, which passes textures to `<slot-reel>` via the `:textures` prop. `SlotReel` itself is fully synchronous — no `Assets.load()` inside.
 
 ### PixiJS DevTools
 

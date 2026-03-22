@@ -35,6 +35,10 @@ renderer.use({
       reel.index = nextValue
       return
     }
+    if (key === 'textures') {
+      reel.textures = nextValue ?? {}
+      return
+    }
     defPatchProp(el, key, prevValue, nextValue)
   },
 })
