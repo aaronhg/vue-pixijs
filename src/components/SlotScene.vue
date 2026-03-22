@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref, watchEffect } from 'vue'
 import { Loader, onReady, onTick } from 'vue3-pixi'
-import { Graphics as PixiGraphics, Ticker } from 'pixi.js'
+import { Assets, Graphics as PixiGraphics, Ticker } from 'pixi.js'
+import '@esotericsoftware/spine-pixi-v8'
+import { Spine } from '@esotericsoftware/spine-pixi-v8'
 import { SlotReel } from '../pixi/SlotReel'
 import '../pixi/types'
 
@@ -26,8 +28,20 @@ function setReelRef(index: number) {
   }
 }
 
-onReady((app) => {
-  ;(globalThis as any).__PIXI_APP__ = app
+onReady(async (pixiApp) => {
+  ;(globalThis as any).__PIXI_APP__ = pixiApp
+
+  // 載入 Spine spineboy 作為背景裝飾
+  Assets.add({ alias: 'spineboy-skel', src: `${BASE}spine/spineboy-pro.skel` })
+  Assets.add({ alias: 'spineboy-atlas', src: `${BASE}spine/spineboy-pma.atlas` })
+  await Assets.load(['spineboy-skel', 'spineboy-atlas'])
+
+  const spineboy = Spine.from({ skeleton: 'spineboy-skel', atlas: 'spineboy-atlas' })
+  spineboy.x = 700
+  spineboy.y = 480
+  spineboy.scale.set(0.3)
+  spineboy.state.setAnimation(0, 'idle', true)
+  pixiApp.stage.addChildAt(spineboy, 0)
 })
 
 // 只讀 .length 避免深度遍歷 PixiJS Container
