@@ -1,4 +1,4 @@
-import { Container, Graphics, Text, TextStyle } from 'pixi.js'
+import { Assets, Container, Graphics, Sprite, Spritesheet, Texture } from 'pixi.js'
 
 export const ReelStatus = {
   IDLE: 0,
@@ -37,6 +37,9 @@ function clamp01(v: number) {
   return Math.min(1, Math.max(0, v))
 }
 
+/** atlas 路徑，可在外部修改 */
+export let SYMBOL_ATLAS = '/symbols/symbols.json'
+
 export class SlotReel extends Container {
   public status: ReelStatus = ReelStatus.IDLE
   public index: number = 0
@@ -52,6 +55,9 @@ export class SlotReel extends Container {
   private resolve: (() => void) | null = null
   private loaded = false
 
+  /** symbol id → texture 快取，atlas 載入後填入 */
+  private textures: Record<string, Texture> = {}
+
   public createSymbolView: (id: string) => Container
   public updateSymbolView: (node: Container, id: string, blur: boolean) => void
 
@@ -66,31 +72,35 @@ export class SlotReel extends Container {
       bg.fill({ color: 0x2a2a4a })
       bg.stroke({ color: 0x444477, width: 1 })
       c.addChild(bg)
-      const t = new Text({
-        text: id || '?',
-        style: new TextStyle({ fill: 0xffffff, fontSize: 28, fontFamily: 'Arial' }),
-      })
-      t.anchor.set(0.5)
-      t.x = this.cfg.symbolWidth / 2
-      t.y = this.cfg.symbolHeight / 2
-      c.addChild(t)
+
+      const sprite = new Sprite(this.textures[id] ?? Texture.EMPTY)
+      sprite.anchor.set(0.5)
+      sprite.x = this.cfg.symbolWidth / 2
+      sprite.y = this.cfg.symbolHeight / 2
+      c.addChild(sprite)
       return c
     }
 
     this.updateSymbolView = (node, id, blur) => {
-      const t = node.children[1] as Text
-      if (t) {
-        t.text = id || '?'
-        t.alpha = blur ? 0.4 : 1
+      const sprite = node.children[1] as Sprite
+      if (sprite) {
+        sprite.texture = this.textures[id] ?? Texture.EMPTY
+        sprite.alpha = blur ? 0.4 : 1
       }
     }
   }
 
-  /** 延遲初始化，等 patchProp 設完 cfg 後才建節點 */
-  private pre() {
+  /** 載入 atlas 並建立節點 */
+  private async pre() {
     if (this.loaded) return
     this.loaded = true
     this.total = this.cfg.visibleCount + 2
+
+    // 載入 spritesheet atlas
+    const sheet: Spritesheet = await Assets.load(SYMBOL_ATLAS)
+    for (const [key, tex] of Object.entries(sheet.textures)) {
+      this.textures[key] = tex
+    }
 
     for (let i = 0; i < this.total; i++) {
       const root = new Container()
@@ -102,7 +112,6 @@ export class SlotReel extends Container {
       this.addChild(root)
     }
 
-    // mask 限制可見區域
     const mask = new Graphics()
     mask.rect(0, 0, this.cfg.symbolWidth, this.cfg.visibleCount * this.cfg.symbolHeight)
     mask.fill({ color: 0xffffff })
@@ -110,16 +119,16 @@ export class SlotReel extends Container {
     this.mask = mask
   }
 
-  public setInitialSymbols(ids: string[]) {
-    this.pre()
+  public async setInitialSymbols(ids: string[]) {
+    await this.pre()
     const arr = [...this.symbolNodes].reverse()
     for (let i = 0; i < arr.length; i++) {
       this.updateSymbolView(arr[i], ids[i] ?? '', false)
     }
   }
 
-  public spin(symbols: string[]): Promise<void> {
-    this.pre()
+  public async spin(symbols: string[]): Promise<void> {
+    await this.pre()
     this.symbols = this.getAllSymbols().concat(symbols)
     this.symbolIndex = 0
     this.delta = 0
@@ -132,7 +141,6 @@ export class SlotReel extends Container {
     this.status = ReelStatus.STOPPING
     this.privateStatus = ReelStatus.LOOPING
     const cur = this.getAllSymbols()
-    // 佇列: [當前] + [bottom extra, 結果, top extra]
     this.symbols = [...cur, cur[0], ...symbols, cur[cur.length - 1]]
     this.symbolIndex = 0
     this.resolve?.()
@@ -163,12 +171,10 @@ export class SlotReel extends Container {
     } else {
       const pct = clamp01(this.delta / dur)
       this.applySymbols(pct > 0.6)
-      // easeOutBack: 先往上彈再回來
       const t = pct
       const s = 1.7
       const inv = 1 - t
       const curve = 1 - inv * inv * ((s + 1) * inv - s)
-      // curve 從 0 → 超過 1 → 回到 1，取 (1-curve) 讓它從 1→負→0
       this.offsetY(-(1 - curve) * this.cfg.startPx)
     }
   }
@@ -208,7 +214,6 @@ export class SlotReel extends Container {
       this.offsetY(0)
     } else {
       const pct = this.delta / stopDuration
-      // 阻尼彈跳: sin 衰減
       const bounce = Math.sin(pct * Math.PI * 2.5) * Math.exp(-pct * 4)
       this.offsetY(bounce * stopPx)
     }
@@ -230,8 +235,13 @@ export class SlotReel extends Container {
 
   private getAllSymbols(): string[] {
     return [...this.symbolNodes].reverse().map((n) => {
-      const t = n.children[1] as Text
-      return t?.text || ''
+      const sprite = n.children[1] as Sprite
+      if (!sprite?.texture || sprite.texture === Texture.EMPTY) return ''
+      // 從 textures 反查 id
+      for (const [id, tex] of Object.entries(this.textures)) {
+        if (tex === sprite.texture) return id
+      }
+      return ''
     })
   }
 }

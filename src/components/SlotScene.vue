@@ -29,9 +29,9 @@ onReady((app) => {
   ;(globalThis as any).__PIXI_APP__ = app
 })
 
-onMounted(() => {
+onMounted(async () => {
   for (const reel of reelRefs.value) {
-    reel.setInitialSymbols(randomSymbols(VISIBLE + 2))
+    await reel.setInitialSymbols(randomSymbols(VISIBLE + 2))
   }
 })
 
@@ -46,7 +46,7 @@ async function handleSpin() {
   if (spinning.value) return
   spinning.value = true
 
-  reelRefs.value.map((reel) => reel.spin(randomSymbols(20)))
+  await Promise.all(reelRefs.value.map((reel) => reel.spin(randomSymbols(20))))
 
   for (let i = 0; i < reelRefs.value.length; i++) {
     await new Promise((r) => setTimeout(r, 300 + i * 200))
