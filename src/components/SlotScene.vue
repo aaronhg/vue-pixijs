@@ -73,7 +73,7 @@ function drawButton(g: PixiGraphics) {
 
 <template>
   <!-- Title -->
-  <text
+  <pixi-text
     :x="400"
     :y="30"
     :anchor="0.5"
@@ -116,7 +116,7 @@ function drawButton(g: PixiGraphics) {
     @pointertap="handleSpin"
   >
     <graphics @effect="drawButton" />
-    <text
+    <pixi-text
       :x="80"
       :y="25"
       :anchor="0.5"

@@ -1,6 +1,4 @@
-import type { ContainerProps } from 'vue3-pixi'
-
-export interface GlowCircleProps extends /* @vue-ignore */ ContainerProps {
+export interface GlowCircleProps {
   radius?: number
   color?: number
   glowColor?: number
@@ -8,7 +6,7 @@ export interface GlowCircleProps extends /* @vue-ignore */ ContainerProps {
   glowSize?: number
 }
 
-export interface SlotReelProps extends /* @vue-ignore */ ContainerProps {
+export interface SlotReelProps {
   visibleCount?: number
   symbolHeight?: number
   symbolWidth?: number

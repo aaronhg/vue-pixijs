@@ -49,6 +49,16 @@ To add a new custom PixiJS class:
 
 Use `@effect` (not `@render`, which is deprecated) for reactive Graphics drawing. The callback receives the Graphics instance: `@effect="(g: Graphics) => { g.clear(); ... }"`.
 
+### `<pixi-text>` not `<text>`
+
+Use `<pixi-text>` instead of `<text>` in templates. `<text>` causes TypeScript errors because Vue treats its `:style` prop as an SVG `style` attribute, conflicting with PixiJS `TextStyle`. All vue3-pixi built-in elements support the `pixi-` prefix.
+
+### Spritesheet Atlas
+
+Symbol textures are loaded as a PixiJS `Spritesheet` atlas (`public/symbols/symbols.json` + `symbols.png`). The JSON format is **TexturePacker JSON Hash** (also known as PixiJS format). Can be regenerated with TexturePacker (Data Format: PixiJS) or `spritesheet-js`.
+
+`SlotReel.pre()` loads the atlas via `Assets.load()`, making `setInitialSymbols()` and `spin()` async.
+
 ### PixiJS DevTools
 
 `globalThis.__PIXI_APP__` is set via `onReady` in `SlotScene.vue` for Chrome PixiJS DevTools extension.

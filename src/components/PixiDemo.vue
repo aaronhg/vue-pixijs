@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { Application } from 'vue3-pixi'
 import { Graphics as PixiGraphics } from 'pixi.js'
 import '../pixi/types'
@@ -87,7 +87,7 @@ onMounted(() => {
       @pointermove="onDragMove"
     >
       <graphics @effect="drawRoundedRect" />
-      <text
+      <pixi-text
         :x="100"
         :y="40"
         :anchor="0.5"
@@ -102,7 +102,7 @@ onMounted(() => {
     </container>
 
     <!-- Title text -->
-    <text
+    <pixi-text
       :x="400"
       :y="50"
       :anchor="0.5"
